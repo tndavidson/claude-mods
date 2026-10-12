@@ -44,15 +44,14 @@ The mod stacks itself above whatever else draws in the band: it awaits the drawi
 
 ## Install
 
-From GitHub, in a terminal session of Claude Code:
+This mod ships in the [claude-mods](../README.md) repository, whose root is the marketplace. From the repository root:
+
+```bash
+./install.sh
+```
+
+That installs every mod in the repository at user scope. Once the repository is on GitHub, this mod alone installs from inside a terminal session of Claude Code with:
 
 ```
 /plugin install task-progress --marketplace <owner>/<repo>
-```
-
-From a local clone:
-
-```bash
-claude plugin marketplace add /path/to/task-progress-mod
-claude plugin install task-progress@task-progress
 ```

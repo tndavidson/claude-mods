@@ -53,20 +53,14 @@ Once the engine has loaded the mod it writes `.claude-plugin/types/`, after whic
 
 ## Install
 
-This repository is its own marketplace: `.claude-plugin/marketplace.json` lists the mod with the repository root as its source. From a terminal session of Claude Code:
+This mod ships in the [claude-mods](../README.md) repository, whose root is the marketplace. From the repository root:
+
+```bash
+./install.sh
+```
+
+That installs every mod in the repository at user scope. Once the repository is on GitHub, this mod alone installs from inside a terminal session of Claude Code with:
 
 ```
 /plugin install prompt-suggestions --marketplace <owner>/<repo>
-```
-
-Answer `y` to add the marketplace, pick a scope (user is first), and set the `enabled` option if asked. The mod is active in that session at once and, at the user scope, in every later session, including the desktop app's Code tab.
-
-To install from a local clone instead of GitHub, add the folder as a marketplace and install from it:
-
-```bash
-claude plugin marketplace add /path/to/prompt-suggestions-mod
-```
-
-```bash
-claude plugin install prompt-suggestions@prompt-suggestions
 ```
