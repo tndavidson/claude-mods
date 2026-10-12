@@ -29,9 +29,11 @@ A model cannot call anything while a single blocking command runs, so reports ar
 - `/progress` prints the tracked task, percent, estimate, and elapsed time.
 - `/progress clear` removes the bar.
 
-## Surfaces
+## Where it draws
 
-The bar replaces the dim hint line under the prompt on the terminal and desktop surfaces. Other surfaces do not raise that line, so nothing is drawn there.
+The bar sits in the band directly above the prompt box, on the terminal and desktop surfaces. The desktop never hands the hint line under the prompt to mods, and its status line is a narrow truncated slot, so the band is the one place a two-row bar fits.
+
+The mod stacks itself above whatever else draws in the band: it awaits the drawing beneath and appends it under its own rows. A mod that shares the band the same way, such as [prompt-suggestions](../prompt-suggestions-mod), shows alongside it. Which of the two lands on top follows the engine's plugin order.
 
 ## Develop
 

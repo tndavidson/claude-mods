@@ -1,7 +1,8 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
-import type { Engine, TestBody } from 'claude-code/testing'
+import type { ElementQuery, Engine, FoundElement, TestBody } from 'claude-code/testing'
 
 type On = Parameters<TestBody>[1]
+type Drawing = { find: (query: ElementQuery) => Promise<FoundElement | undefined> }
 
 const MIN = 60_000
 const TOOL = 'mcp__task-progress__report_progress'
@@ -9,12 +10,19 @@ const SURFACES = ['terminal', 'desktop'] as const
 const COMPOSE = { model: 'm', promptModel: 'm', surfaces: ['terminal'], tools: [], outputStyle: null, traits: [] } as const
 const RUN = { origin: { kind: 'composer' as const }, presentation: { isFullscreen: true, columns: 120 } }
 
-const hint = { isDraft: false, isWorking: true, hint: '? for shortcuts' }
+const band = {
+  hasSurvey: false,
+  isWorking: true,
+  maxRows: 10,
+  bodyColumns: 100,
+  scroll: { offset: 0, bodyRows: 10 },
+  view: {},
+}
 
-function engineHint(on: On) {
-  on('ui.render', { component: 'PromptHint' }, ($, e) => {
+function engineBand(on: On) {
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => {
     const { Text } = $.ui.resolve(e)
-    return <Text key="engine">engine hint</Text>
+    return <Text key="beneath">beneath</Text>
   })
 }
 
@@ -23,14 +31,14 @@ async function report($: Engine, input: Record<string, unknown>) {
 }
 
 function mount($: Engine, surface: (typeof SURFACES)[number] = 'terminal') {
-  return $.ui.mount({ plugin: 'task-progress', surface, component: 'PromptHint', props: hint })
+  return $.ui.mount({ plugin: 'task-progress', surface, component: 'AbovePrompt', props: band })
 }
 
-async function shown(ui: Awaited<ReturnType<typeof mount>>, text: string) {
+async function shown(ui: Drawing, text: string) {
   return (await ui.find({ type: 'Text', text }))?.text
 }
 
-async function isDrawn(ui: Awaited<ReturnType<typeof mount>>) {
+async function isDrawn(ui: Drawing) {
   return (await ui.find({ key: 'hide' })) !== undefined
 }
 
@@ -38,7 +46,7 @@ describe('task-progress', () => {
   for (const surface of SURFACES) {
     test(`draws the bar after a report on ${surface}`, async ($, on) => {
       mock.clock(on, { now: 100 * MIN })
-      engineHint(on)
+      engineBand(on)
       await report($, { task: 'Benchmark', stage: 'load test', percent: 58, etaMinutes: 6 })
       const ui = await mount($, surface)
       expect(await shown(ui, 'Benchmark · load test')).toBe('Benchmark · load test')
@@ -48,21 +56,32 @@ describe('task-progress', () => {
       expect(await shown(ui, 'elapsed 0:00')).toBe('elapsed 0:00')
       expect(await shown(ui, 'updated 0s ago')).toBe('updated 0s ago')
       expect(await isDrawn(ui)).toBe(true)
+      expect(await shown(ui, 'beneath')).toBe('beneath')
       await ui.unmount()
     })
   }
 
   test('passes to the engine with no task', async ($, on) => {
     mock.clock(on)
-    engineHint(on)
+    engineBand(on)
     const ui = await mount($)
+    expect(await isDrawn(ui)).toBe(false)
+    expect(await shown(ui, 'beneath')).toBe('beneath')
+    await ui.unmount()
+  })
+
+  test('yields to a survey', async ($, on) => {
+    mock.clock(on)
+    engineBand(on)
+    await report($, { task: 'Deploy', percent: 20, etaMinutes: 5 })
+    const ui = await $.ui.mount({ plugin: 'task-progress', surface: 'terminal', component: 'AbovePrompt', props: { ...band, hasSurvey: true } })
     expect(await isDrawn(ui)).toBe(false)
     await ui.unmount()
   })
 
   test('counts the estimate down each minute and keeps the start time', async ($, on) => {
     const clock = mock.clock(on, { now: 100 * MIN })
-    engineHint(on)
+    engineBand(on)
     await report($, { task: 'Deploy', percent: 20, etaMinutes: 5 })
     const ui = await mount($)
     await clock.advance(2 * MIN)
@@ -78,7 +97,7 @@ describe('task-progress', () => {
 
   test('dims and says so once a report is stale', async ($, on) => {
     const clock = mock.clock(on, { now: 100 * MIN })
-    engineHint(on)
+    engineBand(on)
     await report($, { task: 'Deploy', percent: 20, etaMinutes: 5 })
     const ui = await mount($)
     await clock.advance(4 * MIN)
@@ -88,7 +107,7 @@ describe('task-progress', () => {
 
   test('done clears the bar, as does /progress clear', async ($, on) => {
     mock.clock(on)
-    engineHint(on)
+    engineBand(on)
     const ui = await mount($)
     await report($, { task: 'Deploy', percent: 20, etaMinutes: 5 })
     expect(await isDrawn(ui)).toBe(true)
@@ -113,7 +132,7 @@ describe('task-progress', () => {
 
   test('x hides until the next report', async ($, on) => {
     mock.clock(on)
-    engineHint(on)
+    engineBand(on)
     await report($, { task: 'Deploy', percent: 20, etaMinutes: 5 })
     const ui = await mount($, 'desktop')
     await ui.press({ key: 'hide' })
@@ -125,7 +144,7 @@ describe('task-progress', () => {
 
   test('clears a minute after the turn ends unless a new report lands', async ($, on) => {
     const clock = mock.clock(on, { now: 100 * MIN })
-    engineHint(on)
+    engineBand(on)
     on('turn.complete', () => ({ text: '' }))
     await report($, { task: 'Deploy', percent: 20, etaMinutes: 5 })
     const ui = await mount($)
@@ -155,7 +174,7 @@ describe('task-progress', () => {
 
   test('does nothing when disabled', { options: { enabled: false } }, async ($, on) => {
     mock.clock(on)
-    engineHint(on)
+    engineBand(on)
     on('prompt.compose', () => ({ sections: [] }))
     await report($, { task: 'Deploy', percent: 20, etaMinutes: 5 })
     const ui = await mount($)

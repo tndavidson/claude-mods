@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, Timer, ToolCallResult } from 'claude-code'
+import type { EngineInterface, Register, RenderElement, Timer, ToolCallResult } from 'claude-code'
 import type { TaskProgress } from '../types'
 import { barText, etaLabel, formatAge, formatClock, isStale, minutesLeft, parseReport } from './format'
 
@@ -55,6 +55,11 @@ async function clearIfUntouched($: EngineInterface, updatedAt: number): Promise<
 /** A plugin tool answers with the text the model reads; the engine refuses an MCP-shaped object here. */
 function toolResult(text: string): ToolCallResult {
   return { result: text }
+}
+
+/** True for a drawing another hook or the engine handed back, as opposed to nothing drawn. */
+function isElement(value: unknown): value is RenderElement {
+  return typeof value === 'object' && value !== null && typeof (value as { type?: unknown }).type === 'string'
 }
 
 /** Serves `report_progress`: writes the report into state, or refuses a malformed one. */
@@ -140,10 +145,11 @@ export const register: Register = (on, options) => {
     return { text: `${current.task}${stage}: ${current.percent}%, ${etaLabel(minutesLeft(current, at)) || 'no estimate'}, elapsed ${formatClock(at - current.startedAt)}.` }
   })
 
-  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
-    if (!isEnabled || (await read($, isHidden))) return next(e)
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (!isEnabled || e.props.hasSurvey || (await read($, isHidden))) return next(e)
     const current = await read($, task)
     if (current === null) return next(e)
+    const beneath = await next(e)
     const at = Math.max(await read($, now), current.updatedAt)
     const { Box, Button, Text } = $.ui.resolve(e)
     const stale = isStale(current, at, staleAfterMinutes)
@@ -165,6 +171,7 @@ export const register: Register = (on, options) => {
           <Text dimColor>{`elapsed ${formatClock(at - current.startedAt)}`}</Text>
           <Text dimColor>{age}</Text>
         </Box>
+        {isElement(beneath) ? beneath : null}
       </Box>
     )
   })
