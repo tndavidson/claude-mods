@@ -1,0 +1,17 @@
+{
+  "name": "prompt-suggestions",
+  "version": "0.1.0",
+  "description": "Suggests next-step prompts as buttons above the prompt box after each turn.",
+  "author": {
+    "name": "Tim Davidson"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "enabled": {
+      "type": "boolean",
+      "description": "Show suggested next-step buttons above the prompt box after each turn.",
+      "default": true,
+      "title": "Enabled"
+    }
+  }
+}

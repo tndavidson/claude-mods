@@ -1,0 +1,13 @@
+{
+  "name": "prompt-suggestions",
+  "description": "Mods for Claude Code: suggested next-step prompts above the prompt box.",
+  "owner": {
+    "name": "Tim Davidson"
+  },
+  "plugins": [
+    {
+      "name": "prompt-suggestions",
+      "source": "./"
+    }
+  ]
+}
