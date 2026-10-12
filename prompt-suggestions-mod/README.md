@@ -7,8 +7,8 @@ A Claude Code mod that shows three suggested next-step prompts as buttons above 
 - After a main-loop turn ends with an answer, the mod forks the session transcript with one extra model call (`$.model.fork`) asking for three next steps as JSON. Aborted, errored, refused and subagent turns are skipped, and each turn is handled once.
 - While the fork runs the band shows a dim "Thinking of next steps…" line.
 - Each button shows a short label with hotkeys 1 to 3. Hovering one tints it (blue, bold, on a gray cell) and reveals the fuller prompt in a card above the row. Pressing one clears the row at once and submits that prompt as your own words.
-- Any prompt you type clears the buttons too. The `x` button hides the band until you run `/suggest`.
-- `/suggest` unhides the band and regenerates suggestions on demand.
+- Any prompt you type clears the buttons too. The `x` button hides the current set; the next answered turn brings a fresh set back.
+- `/suggest` regenerates suggestions on demand, which also brings back a hidden band.
 
 ## Sharing the band
 

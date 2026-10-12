@@ -116,7 +116,7 @@ describe('prompt-suggestions', () => {
     expect(await ui.findAll({ type: 'Button' })).toHaveLength(0)
   })
 
-  test('the x button hides the band and /suggest brings it back', async ($, on) => {
+  test('the x button hides the band until the next answered turn', async ($, on) => {
     on('model.fork', () => ({ value: answered }))
     on('turn.complete', () => ({ text: '' }))
     engineBand($, on)
@@ -130,6 +130,24 @@ describe('prompt-suggestions', () => {
     })
     await ui.press({ key: 'hide' })
     expect(await ui.findAll({ type: 'Button' })).toHaveLength(0)
+
+    await $.turn.complete(turn({ turnId: 't2' }))
+    expect(await ui.findAll({ type: 'Button' })).toHaveLength(4)
+  })
+
+  test('/suggest regenerates on demand and unhides the band', async ($, on) => {
+    on('model.fork', () => ({ value: answered }))
+    on('turn.complete', () => ({ text: '' }))
+    engineBand($, on)
+
+    await $.turn.complete(turn())
+    const ui = await $.ui.mount({
+      plugin: 'prompt-suggestions',
+      surface: 'desktop',
+      component: 'AbovePrompt',
+      props: band(false),
+    })
+    await ui.press({ key: 'hide' })
 
     const result = await $.command.run({
       command: 'suggest',

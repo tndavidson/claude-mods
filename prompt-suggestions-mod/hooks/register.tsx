@@ -11,7 +11,7 @@ const suggestions = atom(
 )
 /** The last main-loop turn suggestions were generated for, so a reload does not repeat it. */
 const lastTurnId = atom({ plugin: 'prompt-suggestions', key: 'turnId' } as const, null as string | null)
-/** Set by the band's x button; cleared by /suggest. */
+/** Set by the band's x button; cleared whenever suggestions are generated again. */
 const isHidden = atom({ plugin: 'prompt-suggestions', key: 'isHidden' } as const, false)
 /** Columns the hover card adds around its one line of text: border and padding. */
 const CARD_CHROME_COLUMNS = 4
@@ -20,10 +20,12 @@ const isLoading = atom({ plugin: 'prompt-suggestions', key: 'isLoading' } as con
 
 /**
  * Asks the model for next steps over the session's own transcript and
- * stores what parses. Resolves to the stored suggestions.
+ * stores what parses. Resolves to the stored suggestions. A band hidden
+ * with its x comes back here: the x hides one set, not the ones to come.
  */
 async function generate($: EngineInterface): Promise<Suggestion[]> {
   await update($, suggestions, () => [])
+  await update($, isHidden, () => false)
   await update($, isLoading, () => true)
   try {
     const reply = await $.model.fork({ prompt: SUGGESTION_PROMPT })
@@ -79,10 +81,9 @@ export const register: Register = (on, options) => {
     return result
   })
 
-  // /suggest brings the band back and regenerates on demand.
+  // /suggest regenerates on demand (and so brings a hidden band back).
   on('command.run', { command: 'suggest' }, async $ => {
     if (!isEnabled) return { text: 'prompt-suggestions is disabled in its settings.' }
-    await update($, isHidden, () => false)
     const items = await generate($)
     return {
       text: items.length === 0 ? 'No suggestions yet. Ask something first.' : `Suggested ${items.length} next steps.`,
