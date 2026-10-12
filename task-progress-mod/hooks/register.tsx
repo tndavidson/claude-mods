@@ -146,11 +146,15 @@ export const register: Register = (on, options) => {
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (!isEnabled || e.props.hasSurvey || (await read($, isHidden))) return next(e)
+    // Every value the drawing depends on is read before any early return: a
+    // live drawing redraws only when a value it read changes, so a band that
+    // yielded to a survey must still be listening when a report arrives.
+    const hidden = await read($, isHidden)
     const current = await read($, task)
-    if (current === null) return next(e)
+    const tickedAt = await read($, now)
+    if (!isEnabled || e.props.hasSurvey || hidden || current === null) return next(e)
     const beneath = await next(e)
-    const at = Math.max(await read($, now), current.updatedAt)
+    const at = Math.max(tickedAt, current.updatedAt)
     const { Box, Button, Text } = $.ui.resolve(e)
     const stale = isStale(current, at, staleAfterMinutes)
     const stage = current.stage === null ? '' : ` · ${current.stage}`

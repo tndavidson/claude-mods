@@ -90,10 +90,13 @@ export const register: Register = (on, options) => {
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (!isEnabled || e.props.hasSurvey || (await read($, isHidden))) return next(e)
-
+    // Every value the drawing depends on is read before any early return: a
+    // live drawing redraws only when a value it read changes, so a band that
+    // yielded to a survey must still be listening when suggestions arrive.
+    const hidden = await read($, isHidden)
     const items = await read($, suggestions)
     const loading = await read($, isLoading)
+    if (!isEnabled || e.props.hasSurvey || hidden) return next(e)
     if (!loading && items.length === 0) return next(e)
 
     // The band is shared: whatever draws beneath (another mod's rows, or
