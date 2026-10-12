@@ -1,0 +1,21 @@
+{
+  "name": "task-progress",
+  "version": "0.1.0",
+  "description": "Shows a progress bar and estimated time remaining under the prompt box while a long task runs.",
+  "author": { "name": "Tim Davidson" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "description": "Show the task progress bar under the prompt box.",
+      "default": true
+    },
+    "staleAfterMinutes": {
+      "type": "number",
+      "title": "Stale after (minutes)",
+      "description": "Minutes without a progress report before the bar dims and says so.",
+      "default": 3
+    }
+  }
+}
