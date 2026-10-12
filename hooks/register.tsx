@@ -52,8 +52,9 @@ async function clearIfUntouched($: EngineInterface, updatedAt: number): Promise<
   if (current !== null && current.updatedAt === updatedAt) await clearTask($)
 }
 
+/** A plugin tool answers with the text the model reads; the engine refuses an MCP-shaped object here. */
 function toolResult(text: string): ToolCallResult {
-  return { result: { content: [{ type: 'text', text }], isError: false } }
+  return { result: text }
 }
 
 /** Serves `report_progress`: writes the report into state, or refuses a malformed one. */
