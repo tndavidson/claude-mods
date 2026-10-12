@@ -1,0 +1,6 @@
+{
+  "name": "task-progress",
+  "description": "Mods for Claude Code: a task progress bar under the prompt box.",
+  "owner": { "name": "Tim Davidson" },
+  "plugins": [{ "name": "task-progress", "source": "./" }]
+}
