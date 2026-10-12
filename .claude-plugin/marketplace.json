@@ -1,0 +1,9 @@
+{
+  "name": "claude-mods",
+  "description": "Tim Davidson's mods for Claude Code: next-step prompt suggestions and a task progress bar above the prompt box.",
+  "owner": { "name": "Tim Davidson" },
+  "plugins": [
+    { "name": "prompt-suggestions", "source": "./prompt-suggestions-mod", "description": "Suggests next-step prompts as buttons above the prompt box after each turn." },
+    { "name": "task-progress", "source": "./task-progress-mod", "description": "Shows a progress bar and estimated time remaining above the prompt box while a long task runs." }
+  ]
+}
