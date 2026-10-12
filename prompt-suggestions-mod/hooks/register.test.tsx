@@ -74,6 +74,9 @@ describe('prompt-suggestions', () => {
 
       await ui.press({ key: 's1' })
       expect(submitted).toEqual([three[1]?.prompt])
+      // Pressing a suggestion hides the row at once; the drawing beneath stays.
+      expect(await ui.findAll({ type: 'Button' })).toHaveLength(0)
+      expect((await ui.find({ type: 'Text', text: 'engine band' }))?.text).toBe('engine band')
     })
   }
 

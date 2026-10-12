@@ -35,6 +35,16 @@ async function generate($: EngineInterface): Promise<Suggestion[]> {
   }
 }
 
+/**
+ * A suggestion was pressed: the row goes at once, then the prompt is
+ * submitted as the person's own. Clearing here rather than in the
+ * `prompt.submit` hook alone keeps the band from lingering while the
+ * submission is queued behind a running turn.
+ */
+async function pick($: EngineInterface, prompt: string): Promise<void> {
+  await update($, suggestions, () => [])
+  await $.prompt.submit({ text: prompt, asUser: true })
+}
 
 /** True for a drawing another hook or the engine handed back, as opposed to nothing drawn. */
 function isElement(value: unknown): value is RenderElement {
@@ -106,7 +116,8 @@ export const register: Register = (on, options) => {
 
     // Each button sits in a keyed Box, which scopes hover: the card inside it
     // is drawn hidden and revealed by the surface while the pointer is over the
-    // button, placed above the row so nothing in it moves. The row never wraps.
+    // button, placed above the row so nothing in it moves; the button's own
+    // label lights at the same time. The row never wraps.
     // The card sizes to its one line of text, so the surface measures it in its
     // own font; only a prompt wider than the band is given the band's width and
     // wraps inside it.
@@ -118,12 +129,13 @@ export const register: Register = (on, options) => {
       <Box flexDirection="column">
         <Box flexDirection="row" flexWrap="nowrap" alignItems="center">
           {items.map((s, i) => (
-            <Box key={`h${i}`} flexShrink={0}>
+            <Box key={`h${i}`} flexShrink={0} hover={{ backgroundColor: 'gray' }}>
               <Button
                 key={`s${i}`}
                 label={s.label}
                 hotkey={String(i + 1)}
-                onPress={() => $.prompt.submit({ text: s.prompt, asUser: true })}
+                hover={{ color: 'blue', bold: true }}
+                onPress={() => pick($, s.prompt)}
               />
               <Box
                 position="absolute"
@@ -139,7 +151,16 @@ export const register: Register = (on, options) => {
               </Box>
             </Box>
           ))}
-          <Button key="hide" label="x" plain onPress={() => update($, isHidden, () => true)} />
+          <Box key="hide-box" flexShrink={0}>
+            <Button
+              key="hide"
+              label="x"
+              plain
+              dimColor
+              hover={{ color: 'blue' }}
+              onPress={() => update($, isHidden, () => true)}
+            />
+          </Box>
         </Box>
         {under}
       </Box>
