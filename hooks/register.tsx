@@ -1,10 +1,10 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, Timer } from 'claude-code'
+import type { EngineInterface, Register, Timer, ToolCallResult } from 'claude-code'
 import type { TaskProgress } from '../types'
 import { barText, etaLabel, formatAge, formatClock, isStale, minutesLeft, parseReport } from './format'
 
 const PLUGIN = 'task-progress'
-const TOOL = `mcp__${PLUGIN}__report_progress`
+const TOOL: string = 'mcp__task-progress__report_progress'
 const TICK_MS = 60_000
 const LINGER_MS = 60_000
 const BAR_WIDTH = 20
@@ -52,8 +52,32 @@ async function clearIfUntouched($: EngineInterface, updatedAt: number): Promise<
   if (current !== null && current.updatedAt === updatedAt) await clearTask($)
 }
 
-function toolResult(text: string) {
+function toolResult(text: string): ToolCallResult {
   return { result: { content: [{ type: 'text', text }], isError: false } }
+}
+
+/** Serves `report_progress`: writes the report into state, or refuses a malformed one. */
+async function serveReport($: EngineInterface, input: unknown): Promise<ToolCallResult> {
+  const parsed = parseReport(input)
+  if (!parsed.ok) return { deny: `report_progress: ${parsed.error}.` }
+  const report = parsed.value
+  if (report.done) {
+    await clearTask($)
+    return toolResult(`Progress bar cleared for "${report.task}".`)
+  }
+  const at = await $.clock.now()
+  await update($, task, previous => ({
+    task: report.task,
+    stage: report.stage,
+    percent: report.percent,
+    etaMinutes: report.etaMinutes,
+    startedAt: previous !== null && previous.task === report.task ? previous.startedAt : at,
+    updatedAt: at,
+  }))
+  await update($, now, () => at)
+  await update($, isHidden, () => false)
+  startTicker($)
+  return toolResult(`Progress bar shows "${report.task}" at ${report.percent}%.`)
 }
 
 export const register: Register = (on, options) => {
@@ -93,28 +117,7 @@ export const register: Register = (on, options) => {
     }
   })
 
-  on('tool.call', { tool: 'mcp__task-progress__report_progress' }, async ($, e) => {
-    const parsed = parseReport(e)
-    if (!parsed.ok) return { deny: `report_progress: ${parsed.error}.` }
-    const report = parsed.value
-    if (report.done) {
-      await clearTask($)
-      return toolResult(`Progress bar cleared for "${report.task}".`)
-    }
-    const at = await $.clock.now()
-    await update($, task, previous => ({
-      task: report.task,
-      stage: report.stage,
-      percent: report.percent,
-      etaMinutes: report.etaMinutes,
-      startedAt: previous !== null && previous.task === report.task ? previous.startedAt : at,
-      updatedAt: at,
-    }))
-    await update($, now, () => at)
-    await update($, isHidden, () => false)
-    startTicker($)
-    return toolResult(`Progress bar shows "${report.task}" at ${report.percent}%.`)
-  })
+  on('tool.call', { tool: /^mcp__task-progress__report_progress$/ }, ($, e) => serveReport($, e))
 
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)

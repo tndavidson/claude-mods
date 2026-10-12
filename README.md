@@ -38,7 +38,7 @@ The bar replaces the dim hint line under the prompt on the terminal and desktop 
 - Run from a checkout: `claude --plugin-dir /path/to/task-progress-mod`, or symlink the folder into a session's `~/.claude/dev-mods/<session-id>/` folder with hot reloading enabled.
 - Validate: `claude plugin validate .claude-plugin/plugin.json`
 - Test: `claude plugin test .`
-- Type-check after the mod has loaded once: `npx -y -p typescript@5.6.3 tsc -p .`
+- Type-check after the mod has loaded once: `npx -y -p typescript@latest tsc -p .` (TypeScript 7; the 5.x compiler reports a spurious deep-instantiation error on `tool.call` matchers)
 
 ## Install
 

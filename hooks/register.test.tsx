@@ -1,11 +1,13 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
-import type { On, TestEngine } from 'claude-code/testing'
+import type { Engine, TestBody } from 'claude-code/testing'
+
+type On = Parameters<TestBody>[1]
 
 const MIN = 60_000
 const TOOL = 'mcp__task-progress__report_progress'
 const SURFACES = ['terminal', 'desktop'] as const
 const COMPOSE = { model: 'm', promptModel: 'm', surfaces: ['terminal'], tools: [], outputStyle: null, traits: [] } as const
-const RUN = { origin: { kind: 'composer' }, presentation: 'transcript' } as const
+const RUN = { origin: { kind: 'composer' as const }, presentation: { isFullscreen: true, columns: 120 } }
 
 const hint = { isDraft: false, isWorking: true, hint: '? for shortcuts' }
 
@@ -16,11 +18,11 @@ function engineHint(on: On) {
   })
 }
 
-async function report($: TestEngine, input: Record<string, unknown>) {
+async function report($: Engine, input: Record<string, unknown>) {
   return $.tool.call({ tool: TOOL, ...input } as never)
 }
 
-function mount($: TestEngine, surface: (typeof SURFACES)[number] = 'terminal') {
+function mount($: Engine, surface: (typeof SURFACES)[number] = 'terminal') {
   return $.ui.mount({ plugin: 'task-progress', surface, component: 'PromptHint', props: hint })
 }
 
