@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register } from 'claude-code'
+import type { EngineInterface, Register, RenderElement } from 'claude-code'
 
 import type { Suggestion } from '../types'
 import { SUGGESTION_PROMPT, parseSuggestions } from './parse'
@@ -35,6 +35,11 @@ async function generate($: EngineInterface): Promise<Suggestion[]> {
   }
 }
 
+
+/** True for a drawing another hook or the engine handed back, as opposed to nothing drawn. */
+function isElement(value: unknown): value is RenderElement {
+  return typeof value === 'object' && value !== null && typeof (value as { type?: unknown }).type === 'string'
+}
 
 export const register: Register = (on, options) => {
   const isEnabled = options.enabled !== false
@@ -77,18 +82,27 @@ export const register: Register = (on, options) => {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (!isEnabled || e.props.hasSurvey || (await read($, isHidden))) return next(e)
 
+    const items = await read($, suggestions)
+    const loading = await read($, isLoading)
+    if (!loading && items.length === 0) return next(e)
+
+    // The band is shared: whatever draws beneath (another mod's rows, or
+    // nothing) is appended under this mod's own row rather than replaced.
+    const beneath = await next(e)
+    const under = isElement(beneath) ? beneath : null
+
     const { Box, Button, Text } = $.ui.resolve(e)
 
-    if (await read($, isLoading)) {
+    if (loading) {
       return (
-        <Box>
-          <Text dimColor>Thinking of next steps…</Text>
+        <Box flexDirection="column">
+          <Box>
+            <Text dimColor>Thinking of next steps…</Text>
+          </Box>
+          {under}
         </Box>
       )
     }
-
-    const items = await read($, suggestions)
-    if (items.length === 0) return next(e)
 
     // Each button sits in a keyed Box, which scopes hover: the card inside it
     // is drawn hidden and revealed by the surface while the pointer is over the
@@ -101,30 +115,33 @@ export const register: Register = (on, options) => {
       prompt.length + CARD_CHROME_COLUMNS > bandColumns ? bandColumns : undefined
 
     return (
-      <Box flexDirection="row" flexWrap="nowrap" alignItems="center">
-        {items.map((s, i) => (
-          <Box key={`h${i}`} flexShrink={0}>
-            <Button
-              key={`s${i}`}
-              label={s.label}
-              hotkey={String(i + 1)}
-              onPress={() => $.prompt.submit({ text: s.prompt, asUser: true })}
-            />
-            <Box
-              position="absolute"
-              bottom={1}
-              left={0}
-              width={cardWidth(s.prompt)}
-              display="none"
-              hover={{ display: 'flex' }}
-              borderStyle="round"
-              paddingX={1}
-            >
-              <Text wrap="wrap">{s.prompt}</Text>
+      <Box flexDirection="column">
+        <Box flexDirection="row" flexWrap="nowrap" alignItems="center">
+          {items.map((s, i) => (
+            <Box key={`h${i}`} flexShrink={0}>
+              <Button
+                key={`s${i}`}
+                label={s.label}
+                hotkey={String(i + 1)}
+                onPress={() => $.prompt.submit({ text: s.prompt, asUser: true })}
+              />
+              <Box
+                position="absolute"
+                bottom={1}
+                left={0}
+                width={cardWidth(s.prompt)}
+                display="none"
+                hover={{ display: 'flex' }}
+                borderStyle="round"
+                paddingX={1}
+              >
+                <Text wrap="wrap">{s.prompt}</Text>
+              </Box>
             </Box>
-          </Box>
-        ))}
-        <Button key="hide" label="x" plain onPress={() => update($, isHidden, () => true)} />
+          ))}
+          <Button key="hide" label="x" plain onPress={() => update($, isHidden, () => true)} />
+        </Box>
+        {under}
       </Box>
     )
   })

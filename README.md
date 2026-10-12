@@ -10,6 +10,10 @@ A Claude Code mod that shows three suggested next-step prompts as buttons above 
 - Any prompt you send clears the buttons. The `x` button hides the band until you run `/suggest`.
 - `/suggest` unhides the band and regenerates suggestions on demand.
 
+## Sharing the band
+
+The band above the prompt is shared with any other mod that draws there. This mod never replaces what is beneath it: it awaits the drawing beneath and appends it under its own row, so a mod that stacks the same way, such as [task-progress](../task-progress-mod), shows alongside the buttons. Which of the two lands on top follows the engine's plugin order.
+
 ## Settings
 
 | Field | Type | Default | Meaning |

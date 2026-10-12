@@ -69,6 +69,8 @@ describe('prompt-suggestions', () => {
       for (const s of three) {
         expect(await ui.find({ type: 'Text', text: s.prompt })).toBeDefined()
       }
+      // The band is shared: the drawing beneath stays under the buttons.
+      expect((await ui.find({ type: 'Text', text: 'engine band' }))?.text).toBe('engine band')
 
       await ui.press({ key: 's1' })
       expect(submitted).toEqual([three[1]?.prompt])
