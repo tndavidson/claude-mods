@@ -1,6 +1,6 @@
 {
   "name": "prompt-suggestions",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Suggests next-step prompts as buttons above the prompt box after each turn.",
   "author": {
     "name": "Tim Davidson"

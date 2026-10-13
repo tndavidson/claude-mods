@@ -1,6 +1,6 @@
 {
   "name": "task-progress",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shows a progress bar and estimated time remaining under the prompt box while a long task runs.",
   "author": { "name": "Tim Davidson" },
   "types": "./types/index.d.ts",
