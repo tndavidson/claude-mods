@@ -62,5 +62,6 @@ This mod ships in the [claude-mods](../README.md) repository, whose root is the 
 That installs every mod in the repository at user scope, and updates the ones already installed. After a change, bump `version` in `.claude-plugin/plugin.json`, re-run it, then `/reload-plugins` in open sessions: sessions load the installed copy rather than this folder, and the update only copies when the version has moved. Once the repository is on GitHub, this mod alone installs from inside a terminal session of Claude Code with:
 
 ```
-/plugin install prompt-suggestions --marketplace <owner>/<repo>
+/plugin marketplace add tndavidson/claude-mods
+/plugin install prompt-suggestions@claude-mods
 ```

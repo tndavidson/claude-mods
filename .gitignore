@@ -4,3 +4,6 @@
 # Editor and OS noise
 .DS_Store
 node_modules/
+
+# Local onboarding notes
+ONBOARDING.md
